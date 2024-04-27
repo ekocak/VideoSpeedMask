@@ -1,6 +1,9 @@
 package com.ekremkocak.videospeedmask
 
-import android.content.pm.PackageManager
+import android.car.Car
+import android.car.hardware.CarSensorManager
+import android.content.ComponentName
+import android.content.ServiceConnection
 import android.graphics.Typeface
 import android.os.Bundle
 import android.util.Log
@@ -13,8 +16,6 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.car.app.annotations.ExperimentalCarApi
-import androidx.car.app.hardware.AutomotiveCarHardwareManager
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -22,14 +23,17 @@ import com.ekremkocak.videospeedmask.databinding.FragmentFirstBinding
 import java.io.File
 import java.lang.Exception
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
+import android.content.pm.PackageManager
+import android.os.IBinder
+import androidx.appcompat.app.AppCompatDelegate
+import com.ekremkocak.videospeedmask.utilities.Prefs
 
 
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
  */
 class FirstFragment : Fragment() {
-
+    private lateinit var car : Car
     private var _binding: FragmentFirstBinding? = null
 
     // This property is only valid between onCreateView and
@@ -52,18 +56,20 @@ class FirstFragment : Fragment() {
     }
 
 
-    @ExperimentalCarApi
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        initCar()
 
         if (allPermissionsGranted()) {
             startCamera()
+            car.connect()
         } else {
             ActivityCompat.requestPermissions(requireActivity(), REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
 
-        ActivityCompat.requestPermissions(requireActivity(), REQUIRED_PERMISSIONS_CAR, 200)
-        try {
+        //ActivityCompat.requestPermissions(requireActivity(), REQUIRED_PERMISSIONS_CAR, 200)
+        /*try {
             AutomotiveCarHardwareManager(requireContext()).carInfo.addSpeedListener(Executors.newSingleThreadExecutor()) {
                 try {
                     binding.transparent.text = String.format("%.0f",it.rawSpeedMetersPerSecond.value)
@@ -75,9 +81,36 @@ class FirstFragment : Fragment() {
 
         }
 
+         */
+
+        binding.toogleNightMode.setOnCheckedChangeListener { _, isChecked ->
+            Prefs.setKeySharedPreferencesBoolean(requireContext(),"night_mode",isChecked)
+            changeNightMode()
+        }
+        binding.textColor.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked){
+                binding.viewTextColor.visibility = View.GONE
+            }else{
+                binding.viewTextColor.visibility = View.VISIBLE
+            }
+        }
+
+
+        changeNightMode()
+
 
 
     }
+    fun changeNightMode(){
+        AppCompatDelegate.setDefaultNightMode(
+            when(Prefs.getKeySharedPreferencesBoolean(requireContext(),"night_mode")){
+                true ->  AppCompatDelegate.MODE_NIGHT_YES
+                else ->  AppCompatDelegate.MODE_NIGHT_NO
+            }
+        )
+
+    }
+
 
     private fun startCamera() {
 
@@ -146,12 +179,72 @@ class FirstFragment : Fragment() {
     companion object {
         private const val TAG = "CameraXGFG"
         private const val REQUEST_CODE_PERMISSIONS = 20
-        private val REQUIRED_PERMISSIONS = arrayOf(android.Manifest.permission.CAMERA)
-        private val REQUIRED_PERMISSIONS_CAR = arrayOf("android.car.permission.CAR_SPEED")
+        private val REQUIRED_PERMISSIONS = arrayOf(android.Manifest.permission.CAMERA,Car.PERMISSION_SPEED,)
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
+
+    override fun onResume() {
+        super.onResume()
+
+        if(allPermissionsGranted()) {
+            if (!car.isConnected && !car.isConnecting) {
+                car.connect()
+            }
+        } else {
+           // requestPermissions(permissions, 0)
+        }
+
+    }
+
+    override fun onPause() {
+        if(car.isConnected) {
+            car.disconnect()
+        }
+
+        super.onPause()
+    }
+
+    private fun initCar() {
+        /*
+        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)) {
+            return
+        }*/
+
+        if(::car.isInitialized) {
+            return
+        }
+
+        car = Car.createCar(requireContext(), object : ServiceConnection {
+            override fun onServiceConnected(componentName: ComponentName, iBinder: IBinder) {
+                onCarServiceReady()
+            }
+
+            override fun onServiceDisconnected(componentName: ComponentName) {
+                // on failure callback
+            }
+        })
+    }
+
+    private fun onCarServiceReady() {
+        watchSpeedSensor()
+    }
+
+    private fun watchSpeedSensor() {
+
+        val sensorManager = car.getCarManager(Car.SENSOR_SERVICE) as CarSensorManager
+
+        sensorManager.registerListener(
+            { carSensorEvent ->
+                binding.transparent.text = String.format("%.0f",carSensorEvent.floatValues[0])
+
+            },
+            CarSensorManager.SENSOR_TYPE_CAR_SPEED,
+            CarSensorManager.SENSOR_RATE_NORMAL
+        )
+    }
+
 }

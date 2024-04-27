@@ -9,12 +9,8 @@
 
     <uses-permission android:name="android.permission.CAMERA" />
 
-    <uses-permission android:name="android.car.permission.CAR_MILEAGE"/>
     <uses-permission android:name="android.car.permission.CAR_SPEED"/>
-    <uses-permission android:name="android.car.permission.CAR_INFO"/>
-    <uses-permission android:name="android.car.permission.CAR_ENERGY"/>
-    <uses-permission android:name="android.car.permission.READ_CAR_DISPLAY_UNITS"/>
-    <uses-permission android:name="android.car.permission.CAR_ENERGY_PORTS"/>
+
 
     <application
         android:allowBackup="true"

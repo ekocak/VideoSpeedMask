@@ -7,6 +7,7 @@ android {
     namespace = "com.ekremkocak.videospeedmask"
     compileSdk = 34
 
+    useLibrary("android.car")
     defaultConfig {
         applicationId = "com.ekremkocak.videospeedmask"
         minSdk = 24
@@ -57,10 +58,11 @@ dependencies {
     implementation ("androidx.camera:camera-lifecycle:${camerax_version}")
     implementation ("androidx.camera:camera-view:${camerax_version}")
 
+    /*
     implementation("androidx.car.app:app-automotive:1.2.0") {
         exclude(group = "com.google.guava", module = "listenablefuture")
     }
-    implementation ("com.google.guava:guava:31.0.1-jre")
+    implementation ("com.google.guava:guava:31.0.1-jre")*/
 
 
 }
