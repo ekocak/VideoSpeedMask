@@ -70,21 +70,6 @@ class FirstFragment : Fragment() {
         }
 
 
-
-        try {
-            AutomotiveCarHardwareManager(requireContext()).carInfo.addSpeedListener(Executors.newSingleThreadExecutor()) {
-                try {
-                    binding.transparent.text = String.format("%.0f",it.rawSpeedMetersPerSecond.value)
-                }catch (ex: Exception){
-
-                }
-            }
-        }catch (exf : Exception){
-
-        }
-
-
-
         binding.toogleNightMode.setOnCheckedChangeListener { _, isChecked ->
             Prefs.setKeySharedPreferencesBoolean(requireContext(),NIGHT_MODE_KEY,isChecked)
             changeNightMode()
