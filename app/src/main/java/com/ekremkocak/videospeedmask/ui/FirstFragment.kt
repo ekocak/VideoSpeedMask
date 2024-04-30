@@ -27,7 +27,12 @@ import android.os.IBinder
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.car.app.annotations.ExperimentalCarApi
 import androidx.car.app.hardware.AutomotiveCarHardwareManager
+import androidx.fragment.app.viewModels
+import com.ekremkocak.videospeedmask.utilities.Constants.NIGHT_MODE_KEY
+import com.ekremkocak.videospeedmask.utilities.Constants.REQUEST_CODE_PERMISSIONS
+import com.ekremkocak.videospeedmask.utilities.Constants.REQUIRED_PERMISSIONS
 import com.ekremkocak.videospeedmask.utilities.Prefs
+import com.ekremkocak.videospeedmask.viewmodel.FirstFragmentViewModel
 import java.util.concurrent.Executors
 
 
@@ -35,21 +40,18 @@ import java.util.concurrent.Executors
  * A simple [Fragment] subclass as the default destination in the navigation.
  */
 class FirstFragment : Fragment() {
+    private val viewModel: FirstFragmentViewModel by viewModels()
     private lateinit var car : Car
     private var _binding: FragmentFirstBinding? = null
     private val binding get() = _binding!!
-
-    private var imageCapture: ImageCapture? = null
 
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-
         _binding = FragmentFirstBinding.inflate(inflater, container, false)
         return binding.root
-
     }
 
 
@@ -61,12 +63,13 @@ class FirstFragment : Fragment() {
 
         if (allPermissionsGranted()) {
             startCamera()
+            readSpeedSecondMethod()
           //  car.connect()
         } else {
             ActivityCompat.requestPermissions(requireActivity(), REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
 
-        //ActivityCompat.requestPermissions(requireActivity(), REQUIRED_PERMISSIONS_CAR, 200)
+
 
         try {
             AutomotiveCarHardwareManager(requireContext()).carInfo.addSpeedListener(Executors.newSingleThreadExecutor()) {
@@ -83,7 +86,7 @@ class FirstFragment : Fragment() {
 
 
         binding.toogleNightMode.setOnCheckedChangeListener { _, isChecked ->
-            Prefs.setKeySharedPreferencesBoolean(requireContext(),"night_mode",isChecked)
+            Prefs.setKeySharedPreferencesBoolean(requireContext(),NIGHT_MODE_KEY,isChecked)
             changeNightMode()
         }
         binding.textColor.setOnCheckedChangeListener { _, isChecked ->
@@ -102,7 +105,7 @@ class FirstFragment : Fragment() {
     }
     private fun changeNightMode(){
         AppCompatDelegate.setDefaultNightMode(
-            when(Prefs.getKeySharedPreferencesBoolean(requireContext(),"night_mode")){
+            when(Prefs.getKeySharedPreferencesBoolean(requireContext(), NIGHT_MODE_KEY)){
                 true ->  AppCompatDelegate.MODE_NIGHT_YES
                 else ->  AppCompatDelegate.MODE_NIGHT_NO
             }
@@ -127,7 +130,7 @@ class FirstFragment : Fragment() {
                     it.setSurfaceProvider(binding.previewView.surfaceProvider)
                 }
 
-            imageCapture = ImageCapture.Builder().build()
+
 
             // Select back camera as a default
             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
@@ -138,11 +141,11 @@ class FirstFragment : Fragment() {
 
                 // Bind use cases to camera
                 cameraProvider.bindToLifecycle(
-                    this, cameraSelector, preview, imageCapture
+                    this, cameraSelector, preview
                 )
 
             } catch (exc: Exception) {
-                Log.e(TAG, "Use case binding failed", exc)
+                Log.e("TAG", "Use case binding failed", exc)
             }
 
         }, ContextCompat.getMainExecutor(requireContext()))
@@ -165,11 +168,7 @@ class FirstFragment : Fragment() {
             }
         }
     }
-    companion object {
-        private const val TAG = "CameraXGFG"
-        private const val REQUEST_CODE_PERMISSIONS = 20
-        private val REQUIRED_PERMISSIONS = arrayOf(android.Manifest.permission.CAMERA,)
-    }
+
 
     override fun onDestroyView() {
         super.onDestroyView()
@@ -216,6 +215,20 @@ class FirstFragment : Fragment() {
                 // on failure callback
             }
         })
+    }
+    @OptIn(ExperimentalCarApi::class)
+    private fun readSpeedSecondMethod(){
+        try {
+            AutomotiveCarHardwareManager(requireContext()).carInfo.addSpeedListener(Executors.newSingleThreadExecutor()) {
+                try {
+                    binding.transparent.text = String.format("%.0f",it.rawSpeedMetersPerSecond.value)
+                }catch (ex: Exception){
+                    Error("Error : $ex")
+                }
+            }
+        }catch (exf : Exception){
+
+        }
     }
 
     private fun onCarServiceReady() {
