@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".FirstFragment">
+    tools:context=".ui.FirstFragment">
 
     <androidx.camera.view.PreviewView
         android:id="@+id/preview_view"
@@ -13,6 +13,7 @@
         android:layout_gravity="center" />
 
     <View
+        android:visibility="gone"
         android:id="@+id/view_text_color"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -31,7 +32,7 @@
         android:background="@color/background"
         android:text="-0-"
         android:fontFamily="@font/robotomono_variablefont_wght"
-        android:textSize="200sp"
+        android:textSize="350sp"
         android:textStyle="bold"
         android:gravity="center" />
 
