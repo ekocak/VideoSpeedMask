@@ -54,14 +54,12 @@ class FirstFragment : Fragment() {
         return binding.root
     }
 
-
-
     @OptIn(ExperimentalCarApi::class)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         //initCar()
 
-        if (allPermissionsGranted()) {
+        if (viewModel.allPermissionsGranted(requireContext())) {
             startCamera()
             readSpeedSecondMethod()
           //  car.connect()
@@ -69,9 +67,14 @@ class FirstFragment : Fragment() {
             ActivityCompat.requestPermissions(requireActivity(), REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
 
+        changeNightMode()
+        initListeners()
 
+
+    }
+    fun initListeners(){
         binding.toogleNightMode.setOnCheckedChangeListener { _, isChecked ->
-            Prefs.setKeySharedPreferencesBoolean(requireContext(),NIGHT_MODE_KEY,isChecked)
+            viewModel.holdNightMode(requireContext(),isChecked)
             changeNightMode()
         }
         binding.textColor.setOnCheckedChangeListener { _, isChecked ->
@@ -81,12 +84,6 @@ class FirstFragment : Fragment() {
                 binding.viewTextColor.visibility = View.VISIBLE
             }
         }
-
-
-        changeNightMode()
-
-
-
     }
     private fun changeNightMode(){
         AppCompatDelegate.setDefaultNightMode(
@@ -136,9 +133,7 @@ class FirstFragment : Fragment() {
         }, ContextCompat.getMainExecutor(requireContext()))
     }
 
-    private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
-        ContextCompat.checkSelfPermission(requireContext(), it) == PackageManager.PERMISSION_GRANTED
-    }
+
 
     override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<String>, grantResults:
@@ -146,7 +141,7 @@ class FirstFragment : Fragment() {
     ) {
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
             // If all permissions granted , then start Camera
-            if (allPermissionsGranted()) {
+            if (viewModel.allPermissionsGranted(requireContext())) {
                 startCamera()
             } else {
                 Toast.makeText(requireContext(), "Permissions not granted by the user.", Toast.LENGTH_SHORT).show()
@@ -163,7 +158,7 @@ class FirstFragment : Fragment() {
     override fun onResume() {
         super.onResume()
 
-        if(false&&allPermissionsGranted()) {
+        if(false&&viewModel.allPermissionsGranted(requireContext())) {
             if (!car.isConnected && !car.isConnecting) {
                 car.connect()
             }
